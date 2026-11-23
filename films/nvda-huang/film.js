@@ -63,8 +63,8 @@ await K.film([
  {scene:'discs', until:'@b10', says:'谁接了他的位置：临时 CEO + 首任董事长',
   items:[
    {id:'h', name:'黄仁勋', color:'green', at:'@b09'},
-   {id:'k', name:'克雷斯', color:'blue', at:'@b09:克雷斯', tag:'代理 CEO'},
-   {id:'j', name:'琼斯', color:'amber', at:'@b09:琼斯', tag:'首任董事长'},
+   {id:'k', name:'克雷斯', color:'blue', at:'@b09:克雷斯', tag:{label:'新任', value:'代理CEO'}},
+   {id:'j', name:'琼斯', color:'amber', at:'@b09:琼斯', tag:{label:'新任', value:'董事长'}},
   ]},
 
  {scene:'statement', until:'@b11', says:'提出全片的问题：一个人的去留凭什么定价',
