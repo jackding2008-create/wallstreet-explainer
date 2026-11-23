@@ -81,7 +81,7 @@ await K.film([
  {scene:'change', until:'@b14', says:'从 5.8 万亿到 3.05 万亿，47% 不是形容词',
   from:{value:'$5.8万亿', label:'10 月 6 日 · 市值'},
   to:{value:'$3.05万亿', label:'11 月 20 日 · 市值', at:'@b13:三点零五'},
-  mult:'−47%', at:'@b13', multAt:'@b13:百分之四十七'},
+  mult:'−47%'},
 
  {scene:'flow', until:'@b16', says:'麻烦一件接一件：绯闻 → 调查 → 监管 → 诉讼',
   nodes:[
@@ -91,7 +91,7 @@ await K.film([
    {id:'d', text:'股东集体诉讼', pos:[3,0]},
   ],
   links:[{from:'a',to:'b'},{from:'b',to:'c'},{from:'c',to:'d'}],
-  steps:[{at:'@b14', node:'a'},{at:'@b15', node:'c'},{at:'@b15:会计', node:'c'}]},
+  steps:[{at:'@b14', focus:'a'},{at:'@b15', focus:'c'}]},
 
  {scene:'stats', until:'@b17', says:'同一天三个数字：又跌 14%、目标价腰斩、市值 3.05 万亿',
   items:[
@@ -124,7 +124,7 @@ await K.film([
 
  {scene:'statement', says:'落到判断：市场怕的是没有第二个人',
   lines:['市场怕的不是绯闻','也不是证交会','是找不到第二个人'],
-  hl:['第二个人'], at:['@b23:绯闻','@b23:证交会','@b24:第二个人']},
+  hl:['第二个人'], at:['@b23:绯闻','@b23:证交会','@b24:第二个']},
 ]);
 return K.go();
 })();
