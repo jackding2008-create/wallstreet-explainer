@@ -1,0 +1,140 @@
+name: render
+
+on:
+  push:
+    paths:
+      - 'films/**'
+      - '.github/workflows/render.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: render-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      FILM: nvda-huang
+      WORK: work/nvda
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: System deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg unzip fonts-noto-cjk
+
+      - name: npm + chromium
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Patch no-sandbox
+        run: |
+          if ! grep -q "no-sandbox" scripts/render.mjs; then
+            sed -i "s/'--disable-lcd-text'/'--disable-lcd-text', '--no-sandbox'/" scripts/render.mjs
+          fi
+          grep -n "no-sandbox" scripts/render.mjs
+
+      - name: Fonts
+        run: bash ops/fetch_fonts.sh
+
+      - name: Python deps
+        run: pip install "edge-tts>=7.3.1"
+
+      - name: Build film
+        run: |
+          rm -rf "$WORK"
+          node scripts/new_film.mjs "$WORK"
+          cp "films/$FILM/script.json" "$WORK/script.json"
+          cp "films/$FILM/film.js" "$WORK/film.js"
+          mkdir -p "$WORK/assets/img"
+          curl -fsSL -o "$WORK/assets/img/huang.jpg" \
+            "https://upload.wikimedia.org/wikipedia/commons/a/a1/Jensen_huang_stanford_2026-04-30_005.jpg"
+          python scripts/temp_voice.py "$WORK/script.json"
+          node -e "const t=require('./$WORK/timeline.json');console.log('duration',t.duration,'s ·',t.beats.length,'beats')"
+
+      - name: Check shot table
+        run: node scripts/render.mjs --dir "$WORK" --check 2>&1 | tee check.log
+
+      - name: Sheet
+        if: always()
+        run: node scripts/render.mjs --dir "$WORK" --sheet 2>&1 | tail -40 || true
+
+      - name: Render 720p
+        run: node scripts/render.mjs --dir "$WORK" --video --h 720 2>&1 | tee render-720.log
+
+      - name: Render 1080p
+        run: node scripts/render.mjs --dir "$WORK" --video --h 1080 2>&1 | tee render-1080.log
+
+      - name: Collect
+        if: always()
+        run: |
+          mkdir -p dist
+          for f in "$WORK"/out/*.mp4; do
+            [ -f "$f" ] || continue
+            b=$(basename "$f")
+            case "$b" in
+              *720*) cp "$f" "dist/$FILM-720p.mp4" ;;
+              *1080*) cp "$f" "dist/$FILM-1080p.mp4" ;;
+              *) cp "$f" "dist/$b" ;;
+            esac
+          done
+          cp "$WORK/out/sheet.jpg" "dist/sheet.jpg" 2>/dev/null || true
+          cp check.log "dist/check.log" 2>/dev/null || true
+          ls -lh dist || true
+
+      - name: Release
+        if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: render-${{ github.run_number }}
+          name: ${{ env.FILM }} · run ${{ github.run_number }}
+          body: |
+            自动渲染产物。run ${{ github.run_number }} · commit ${{ github.sha }}
+            720p 用于预览/微信，1080p 为成片。sheet.jpg 是每镜三个代表帧。
+          files: dist/*
+          fail_on_unmatched_files: false
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILM }}-run${{ github.run_number }}
+          path: dist/*
+          if-no-files-found: warn
+
+      - name: Status
+        if: always()
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          d = pathlib.Path('dist')
+          files = sorted(p.name for p in d.glob('*')) if d.exists() else []
+          st = {"run": os.environ.get("GITHUB_RUN_NUMBER"), "sha": os.environ.get("GITHUB_SHA"),
+                "result": os.environ.get("JOB_STATUS"), "files": files}
+          pathlib.Path('render-status.json').write_text(json.dumps(st, indent=1), encoding='utf-8')
+          print(st)
+          PY
+        env:
+          JOB_STATUS: ${{ job.status }}
+
+      - name: Commit status
+        if: always()
+        run: |
+          git config user.name "render-bot"
+          git config user.email "render-bot@users.noreply.github.com"
+          git add render-status.json
+          git commit -m "chore: render status run ${{ github.run_number }} [skip ci]" || true
+          git push || true
