@@ -1,0 +1,16 @@
+{
+  "id": "__USER__/ws-worker",
+  "title": "ws-worker",
+  "code_file": "worker.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "__USER__/ws-handoff",
+    "__USER__/ws-models"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

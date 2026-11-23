@@ -15,3 +15,6 @@ sheets/
 *.webm
 *.m4a
 *.wav
+# Codespaces/Kaggle 流水线
+build/
+fonts/
