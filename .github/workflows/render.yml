@@ -66,7 +66,10 @@ jobs:
           node -e "const t=require('./$WORK/timeline.json');console.log('duration',t.duration,'s ·',t.beats.length,'beats')"
 
       - name: Check shot table
-        run: node scripts/render.mjs --dir "$WORK" --check 2>&1 | tee check.log
+        run: |
+          set -o pipefail
+          node scripts/render.mjs --dir "$WORK" --check 2>&1 | tee check.log
+          if grep -q "写错了" check.log; then echo "::error::镜头表有错（见 check.log）"; exit 1; fi
 
       - name: Sheet
         if: always()
@@ -78,11 +81,23 @@ jobs:
       - name: Render 1080p
         run: node scripts/render.mjs --dir "$WORK" --video --h 1080 2>&1 | tee render-1080.log
 
+      - name: Mix + mux audio
+        run: |
+          set -o pipefail
+          python scripts/mix.py "$WORK" 2>&1 | tail -20
+          for H in 720 1080; do
+            ffmpeg -v error -y -i "$WORK/out/visual_$H.mp4" -i "$WORK/mix_master.wav" \
+              -c:v copy -c:a aac -b:a 160k -shortest "$WORK/out/nvda-$H.mp4"
+            ls -lh "$WORK/out/nvda-$H.mp4"
+          done
+
       - name: Collect
         if: always()
         run: |
           mkdir -p dist
-          for f in "$WORK"/out/*.mp4; do
+          echo "== $WORK/out =="
+          ls -lh "$WORK/out" || true
+          for f in "$WORK"/out/nvda-*.mp4; do
             [ -f "$f" ] || continue
             b=$(basename "$f")
             case "$b" in
