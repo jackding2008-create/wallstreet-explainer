@@ -1,7 +1,7 @@
 {
- "run": "1",
- "sha": "2d2ec49047978482f4f881268992c9c4f3991ccf",
- "result": "success",
+ "run": "3",
+ "sha": "ba9ae345e00c94e495218d55949a8c948bb82c36",
+ "result": "failure",
  "files": [
   "check.log"
  ]
