@@ -11,12 +11,14 @@ const K=await KIT.use(F);
 const PH='assets/kit/ph/';
 
 await K.film([
- {scene:'headlines', until:'@b02', says:'这不是传闻：四家媒体同时把它放上头版',
+ {scene:'headlines', until:'@b02', says:'不是传闻：辞职当天，所有头条都是它',
   items:[
-   {src:'CNBC', date:'2026-11-12', title:'Nvidia stock closes down 4% after CEO Jensen Huang announces resignation'},
-   {src:'NBC NEWS', date:'2026-11-12', title:'Nvidia stock falls after Huang resigns, weighing on broader market'},
-   {src:'REUTERS', date:'2026-11-12', title:'Equities close lower as Nvidia drop outweighs energy gains'},
-   {src:"BARRON'S", date:'2026-11-19', title:'Nvidia Stock Drops Below $150 Support After Jensen Huang Scandal'},
+   {src:'财经电视', date:'2026-11-12', title:'英伟达 CEO 黄仁勋宣布辞职'},
+   {src:'通讯社', date:'2026-11-12', title:'英伟达重挫 拖累美股收低'},
+   {src:'财经网站', date:'2026-11-12', title:'盘中一度跌 16% 市值跌破 4 万亿'},
+   {src:'财经报纸', date:'2026-11-12', title:'一个人 让 4 万亿美元公司换帅'},
+   {src:'财经评论', date:'2026-11-13', title:'英伟达的接班人问题 终于来了'},
+   {src:'财经电视', date:'2026-11-13', title:'分析师：短期动荡 长期看 AI 需求'},
   ],
   pick:{i:0, at:'@b01:辞呈'}},
 
@@ -32,7 +34,8 @@ await K.film([
 
  {scene:'number', until:'@b04', says:'把 47% 换成钱：一个月蒸发 2.7 万亿美元',
   value:'$2.7万亿', brow:'10 月高点以来 · 蒸发', en:'MARKET CAP WIPED OUT',
-  sub:'从 $5.8 万亿 → $3.05 万亿'},
+  at:'@b03:二点七',
+  sub:{label:'10 月 6 日 · 高点', value:'$5.8万亿', at:'@b03:高点'}},
 
  {scene:'profile', until:'@b05', says:'跌的不是抽象指数，是一个干了 33 年的人',
   name:'黄仁勋', en:'JENSEN HUANG', title:'英伟达 CEO · 1993—2026', color:'green',
@@ -41,10 +44,12 @@ await K.film([
 
  {scene:'headlines', until:'@b07', says:'起因是三篇报道，不是业绩',
   items:[
-   {src:'FINANCIAL TIMES', date:'2026-11-07', title:'报道称黄仁勋与一名女高管有私情，美方情报官员认为她为中国从事间谍活动'},
-   {src:'STATEMENT', date:'2026-11-08', title:'黄仁勋发表声明，承认自己对妻子不忠'},
-   {src:'THE NEW YORK TIMES', date:'2026-11-12', title:'再曝：他与一名直接向他汇报的副总裁也有过关系'},
-   {src:'CNBC', date:'2026-11-12', title:'董事会宣布他立即辞去 CEO 与董事职务'},
+   {src:'财经报纸', date:'2026-11-07', title:'报道称黄仁勋与一名女高管有私情'},
+   {src:'声明', date:'2026-11-08', title:'黄仁勋承认 对妻子不忠'},
+   {src:'财经报纸', date:'2026-11-12', title:'再曝 他与直接汇报的副总裁有染'},
+   {src:'公司公告', date:'2026-11-12', title:'董事会宣布 他立即辞去 CEO'},
+   {src:'通讯社', date:'2026-11-12', title:'CFO 克雷斯出任代理 CEO'},
+   {src:'财经评论', date:'2026-11-13', title:'丑闻之外 市场更怕不确定性'},
   ],
   pick:{i:0, at:'@b05:金融时报'}},
 
@@ -85,10 +90,10 @@ await K.film([
 
  {scene:'flow', until:'@b16', says:'麻烦一件接一件：绯闻 → 调查 → 监管 → 诉讼',
   nodes:[
-   {id:'a', text:'绯闻曝光', pos:[0,0]},
-   {id:'b', text:'董事会独立调查', pos:[1,0]},
-   {id:'c', text:'SEC 查会计处理', pos:[2,0]},
-   {id:'d', text:'股东集体诉讼', pos:[3,0]},
+   {id:'a', title:'绯闻曝光', pos:[0,0]},
+   {id:'b', title:'董事会独立调查', pos:[1,0]},
+   {id:'c', title:'SEC 查会计处理', pos:[2,0]},
+   {id:'d', title:'股东集体诉讼', pos:[3,0]},
   ],
   links:[{from:'a',to:'b'},{from:'b',to:'c'},{from:'c',to:'d'}],
   steps:[{at:'@b14', focus:'a'},{at:'@b15', focus:'c'}]},
