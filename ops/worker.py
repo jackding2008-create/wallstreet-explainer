@@ -7,9 +7,9 @@
 """
 import os, sys, json, glob, time, shutil, zipfile, subprocess, traceback
 
-IN = "/kaggle/input/ws-handoff"
-MODELS = "/kaggle/input/ws-models"
-WORK = "/kaggle/working"
+IN = os.environ.get("WS_IN", "/kaggle/input/ws-handoff")
+MODELS = os.environ.get("WS_MODELS", "/kaggle/input/ws-models")
+WORK = os.environ.get("WS_WORK", "/kaggle/working")
 CODE = os.path.join(WORK, "code")
 OUT = os.path.join(WORK, "out")
 
@@ -118,11 +118,11 @@ def main():
     asr = job.get("asr")
     if asr:
         try:
-            from faster_whisper.utils import download_model
-            wdir = os.path.join(WORK, "fw-small")
+            wdir = os.path.join(MODELS, "fw-small")
             if not os.path.exists(os.path.join(wdir, "model.bin")):
-                log("下载 faster-whisper-small …")
-                wdir = download_model("small", output_dir=wdir)
+                from faster_whisper.utils import download_model
+                log("ws-models 里没有 fw-small，临时下载 faster-whisper-small …")
+                wdir = download_model("small", output_dir=os.path.join(WORK, "fw-small"))
             env = os.environ.copy()
             env["WHISPER_DIR"] = wdir
             # ASR 强制 CPU：T4 上 cuDNN/ctranslate2 版本不匹配的概率不低，CPU int8 对 1–3 分钟口播够用。

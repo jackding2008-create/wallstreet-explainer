@@ -64,6 +64,19 @@ cmd_models() {
   cat > "$ds/dataset-metadata.json" <<JSON
 {"title":"ws-models","id":"$KAGGLE_USERNAME/ws-models","licenses":[{"name":"other"}]}
 JSON
+  # whisper small 也放进模型数据集，Kaggle 每次跑就不用再下 500MB
+  local wh="$ds/fw-small"
+  if [ ! -s "$wh/model.bin" ]; then
+    log "下载 faster-whisper-small（约 500MB）"
+    python3 -c "import huggingface_hub" 2>/dev/null || pip install -q huggingface_hub
+    python3 - "$wh" <<'PY'
+import os, sys
+from huggingface_hub import snapshot_download
+d = sys.argv[1]
+snapshot_download("Systran/faster-whisper-small", local_dir=d)
+print("ok", d)
+PY
+  fi
   upsert_dataset "$ds" "models $(date -u +%FT%TZ)" "ws-models"
 }
 

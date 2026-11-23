@@ -41,18 +41,16 @@ Codespaces 当“办公室”（写稿、跑 agent、Playwright 逐帧渲染、f
 
 ### 1. 建自己的仓库
 
-这个目录已经是完整仓库（含 `.devcontainer/` 和 `ops/`）。推到你的 GitHub：
+这个目录已经是 git 仓库，并且已经提交好了（`Add Codespaces + Kaggle ops pipeline`）。在你的 GitHub 上新建一个**空**仓库（建议 Private），然后：
 
 ```bash
-git init
-git add .
-git commit -m "wallstreet-explainer + Codespaces/Kaggle ops"
-git branch -M main
+git remote rename origin upstream    # 原来的 origin 指向上游作者
 git remote add origin https://github.com/<你的用户名>/wallstreet-explainer.git
+git branch -M main
 git push -u origin main
 ```
 
-> 仓库建议 **Private**。公开也行，但片子的素材和文案会一起公开。
+> 如果之前已经改过 remote，`git remote rename` 会报“No such remote”；直接 `git remote set-url origin <你的仓库>` 即可。
 
 ### 2. 开 Codespace
 
@@ -81,7 +79,7 @@ bash ops/kaggle.sh init
 bash ops/kaggle.sh models
 ```
 
-会下载 ISNet（178MB）并创建私有数据集 `ws-models`。之后每条片都复用它，不用再传。
+会下载 ISNet（178MB）和 faster-whisper-small（约 500MB），创建私有数据集 `ws-models`。之后每条片都复用它，不用再传，Kaggle 每次跑也不用再下载模型。
 
 ### 5. 字体自检
 
@@ -183,6 +181,8 @@ node scripts/render.mjs --dir films/<片子名> --video --h 1080
 | `401 Unauthorized` | secret 名字必须是 `KAGGLE_USERNAME` / `KAGGLE_KEY`；改完 secret 要重启 Codespace |
 | `kernels push` 报 dataset 不存在 | 先 `bash ops/kaggle.sh push`，再 `run` |
 | kernel 秒失败 | 看 `bash ops/kaggle.sh pull` 后的 `meta.json`；最常见是 `ws-models` 没建 |
+| kernel 报联网 / 403 | Kaggle 账号要先做手机验证：Settings → Phone Verification |
+| `ws-models` 第一次上传慢 | 约 660MB，只传一次；以后每条片只传 `ws-handoff` 的素材 |
 | 抠像跑在 CPU | `meta.json` 里 `cuda:false`；Kaggle 设置里确认 Accelerator=GPU T4 x2 |
 | ASR 对不上 | `timeline.json` 生成时会打印“对上 x%”；低于 80% 说明 script.json 和口播不一致 |
 | `--check` 报时间线过期 | 改过 `script.json` 后重跑 `timeline_stub.mjs`；有配音则重跑 ASR |
