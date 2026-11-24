@@ -37,26 +37,66 @@ Codespaces 当“办公室”（写稿、跑 agent、Playwright 逐帧渲染、f
 | 混音 `mix.py` | Codespaces | ffmpeg |
 | 成片检查 | Codespaces | `--check` / `--sheet` / 抽帧对比 |
 
+## 开机 / 关机（每次都走这两条）
+
+两边的额度都是按"运行时间"扣的，所以用完必须关：
+
+| | 计费口径 | 关掉之后 |
+|---|---|---|
+| Codespaces | **120 core-hours/月**；4 核 ≈ 30 小时/月 | 停 = 不再扣；存储仍占 15GB/月额度 |
+| Kaggle | **30 GPU 小时/周**（T4×2） | kernel 跑完自动停，不跑就不扣 |
+
+```bash
+python ops/system.py up       # 开工：CodeSpace 不存在就建，存在就开；验 Kaggle 登录和数据集
+python ops/system.py status   # 看一眼两边状态
+python ops/system.py down     # 收工：停 CodeSpace，并检查 Kaggle 有没有还挂着的 kernel
+python ops/system.py down --delete   # 一个月不用了：连 CodeSpace 一起删，彻底释放存储
+```
+
+远程执行（我平时就这么指挥 Codespace）：
+
+```bash
+python ops/system.py sh "cd ~/wallstreet-explainer && node scripts/render.mjs --dir films/x --check"
+python ops/system.py put films/x/assets/host.mp4 films/x/assets/host.mp4
+python ops/system.py get films/x/out/preview.mp4 ./preview.mp4
+```
+
+> Codespaces 默认 30 分钟无操作自动停（`--idle-timeout 30m`）。就算忘了说，也不会一直烧。
+> Kaggle 的 kernel 一旦排队/运行就停不下来（网页上有 Stop），所以 `down` 会提示你处理。
+
 ## 一次性准备（约 20 分钟）
 
-### 1. 建自己的仓库
+### 1. 仓库
 
-这个目录已经是 git 仓库，并且已经提交好了（`Add Codespaces + Kaggle ops pipeline`）。在你的 GitHub 上新建一个**空**仓库（建议 Private），然后：
+**已经建好了**：`https://github.com/jackding2008-create/wallstreet-explainer`（fork 自上游，`main` 上有本流水线的提交）。
+换台机器只要：
+
+```bash
+git clone https://github.com/jackding2008-create/wallstreet-explainer.git
+cd wallstreet-explainer
+```
+
+要在自己的另一个账号下重建，才需要这套：
 
 ```bash
 git remote rename origin upstream    # 原来的 origin 指向上游作者
 git remote add origin https://github.com/<你的用户名>/wallstreet-explainer.git
-git branch -M main
 git push -u origin main
 ```
-
-> 如果之前已经改过 remote，`git remote rename` 会报“No such remote”；直接 `git remote set-url origin <你的仓库>` 即可。
 
 ### 2. 开 Codespace
 
 仓库页 → **Code** → **Codespaces** → **Create codespace on main** → 机型选 **4-core**（2 核渲染会明显慢）。
 
 首次启动会自动跑 `.devcontainer/setup.sh`：apt 装 ffmpeg、pip 依赖、Playwright Chromium、拉字体。大约 5–10 分钟。
+
+> **也可以完全在本机跑。** `ops/kaggle.sh` 只是 `ops/kaggle.py` 的薄壳；Windows 上直接：
+> ```powershell
+> npm install; npx playwright install chromium
+> python -m pip install -r requirements.txt edge-tts
+> python ops/kaggle.py init
+> ```
+> 渲染会慢一些，但抠像/对齐照样甩给 Kaggle。
 
 ### 3. 配 Kaggle 凭据
 
@@ -67,11 +107,15 @@ Kaggle → 右上头像 → **Settings** → **API** → **Create New Token**，
 - `KAGGLE_USERNAME`
 - `KAGGLE_KEY`
 
+（新版 `KGAT_...` token 也可以，只配一个 `KAGGLE_API_TOKEN` 即可；两种方式 `ops/kaggle.py` 都认。）
+
 重建/重启 Codespace 后，终端里：
 
 ```bash
-bash ops/kaggle.sh init
+bash ops/kaggle.sh init        # 等价于 python ops/kaggle.py init
 ```
+
+两个入口是同一份实现：`ops/kaggle.sh` 只是薄壳，真正的逻辑在 `ops/kaggle.py`。Windows 上直接 `python ops/kaggle.py ...` 就能用。
 
 ### 4. 建模型数据集（只一次）
 
