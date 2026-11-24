@@ -106,7 +106,9 @@ jobs:
               *) cp "$f" "dist/$b" ;;
             esac
           done
-          cp "$WORK/out/sheet.jpg" "dist/sheet.jpg" 2>/dev/null || true
+          for s in sheet.png sheet.jpg; do
+            [ -f "$WORK/out/$s" ] && cp "$WORK/out/$s" "dist/$s"
+          done || true
           cp check.log "dist/check.log" 2>/dev/null || true
           ls -lh dist || true
 
