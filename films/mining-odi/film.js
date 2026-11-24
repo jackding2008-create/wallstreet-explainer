@@ -120,24 +120,24 @@ await K.film([
   img:'assets/img/plant.jpg', push:[1,1.06], focus:[980,540],
   badge:{name:'第八步 · 开采', color:'green', at:'@b28'}},
 
- {scene:'stats', until:'@b32', says:'两把尺子：C1 和 AISC',
+ {scene:'stats', until:'@b30', says:'两把尺子：C1 和 AISC',
   brow:'铜 · 成本口径',
   items:[
    {label:'C1 · 现金成本', value:'采矿+选矿', at:'@b29:C1'},
    {label:'AISC · 全维持', value:'$1.7–3.8/lb', at:'@b29:AISC'},
    {label:'行业常见', value:'$2.5/lb', at:'@b29:2.5'}]},
 
- {scene:'change', until:'@b33', says:'同一座矿，资源量从 2400 涨到 4249 万吨',
+ {scene:'change', until:'@b31', says:'同一座矿，资源量从 2400 涨到 4249 万吨',
   from:{value:'2400万吨', label:'2015 年 · 铜资源量'},
   to:{value:'4249万吨', label:'后来 · 铜资源量', at:'@b31:4249'},
   mult:'×1.8'},
 
- {scene:'statement', until:'@b34', says:'闭矿不是结束，是三十年的账单',
+ {scene:'statement', until:'@b33', says:'闭矿不是结束，是三十年的账单',
   lines:['最后一步：闭矿','保证金第一天就要备','责任跟着矿一辈子'],
   hl:['一辈子'], at:['@b32:闭矿','@b33:第一天','@b33:一辈子'],
   items:['assets/img/pit.jpg']},
 
- {scene:'montage', until:'@b35', says:'这条流水线，才是被买回来的东西',
+ {scene:'montage', until:'@b34', says:'这条流水线，才是被买回来的东西',
   items:['assets/img/core.jpg','assets/img/pit.jpg','assets/img/truck.jpg',
    'assets/img/plant.jpg','assets/img/port.jpg'],
   pin:{value:'15年', brow:'发现 → 出矿'}},
