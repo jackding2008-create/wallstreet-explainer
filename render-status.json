@@ -1,8 +1,12 @@
 {
- "film": null,
- "run": "6",
- "sha": "bd0d0586dc064d70190ae527e9ceb3ef108bf9af",
+ "film": "mining-odi",
+ "run": "7",
+ "sha": "1acff9564d3ca710439359e3df32bab8dcd76fc2",
  "heights": "480",
- "result": "cancelled",
- "files": []
+ "result": "success",
+ "files": [
+  "check.log",
+  "mining-odi-480p.mp4",
+  "sheet.png"
+ ]
 }
