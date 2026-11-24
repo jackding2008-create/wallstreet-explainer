@@ -1,0 +1,5 @@
+pit.jpg https://commons.wikimedia.org/wiki/Special:FilePath/Chuquicamata%20copper%20mine%20chile.jpg?width=1600
+core.jpg https://commons.wikimedia.org/wiki/Special:FilePath/Drill%20core%20boxes%20Onkalo%201.jpg?width=1600
+plant.jpg https://commons.wikimedia.org/wiki/Special:FilePath/20150125110636%20Col%C3%B3n%20concentrator%20plant.jpg?width=1600
+port.jpg https://commons.wikimedia.org/wiki/Special:FilePath/Alpha%20Millennium%20departs%20Port%20Hedland%2C%202012%20(1).JPG?width=1600
+truck.jpg https://commons.wikimedia.org/wiki/Special:FilePath/Sunrise%20Dam%20Gold%20Mine%20open%20pit%2005.jpg?width=1600

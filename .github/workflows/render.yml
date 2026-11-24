@@ -6,6 +6,13 @@ on:
       - 'films/**'
       - '.github/workflows/render.yml'
   workflow_dispatch:
+    inputs:
+      film:
+        description: '要渲染的片子目录名（films/<name>）'
+        required: true
+      heights:
+        description: '短边像素，逗号分隔，例如 480 或 720,1080'
+        default: '480'
 
 permissions:
   contents: write
@@ -19,12 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 350
     env:
-      FILM: nvda-huang
-      WORK: work/nvda
+      HEIGHTS: ${{ inputs.heights || '480' }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -53,17 +59,42 @@ jobs:
       - name: Python deps
         run: pip install "edge-tts>=7.3.1"
 
+      - name: Resolve film
+        run: |
+          set -euo pipefail
+          F="${{ inputs.film }}"
+          if [ -z "$F" ]; then
+            BEFORE="${{ github.event.before }}"
+            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              F=$(git show --pretty=format: --name-only HEAD -- films | grep . | head -1 | cut -d/ -f2 || true)
+            else
+              F=$(git diff --name-only "$BEFORE" "${{ github.sha }}" -- films | grep . | head -1 | cut -d/ -f2 || true)
+            fi
+          fi
+          if [ -z "${F:-}" ] || [ ! -f "films/$F/film.js" ]; then
+            echo "::error::无法确定要渲染的片子（FILM='${F:-}'）"; exit 1
+          fi
+          echo "FILM=$F" >> "$GITHUB_ENV"
+          echo "WORK=work/$F" >> "$GITHUB_ENV"
+          echo "片子：$F · 分辨率：$HEIGHTS"
+
       - name: Build film
         run: |
+          set -euo pipefail
           rm -rf "$WORK"
           node scripts/new_film.mjs "$WORK"
           cp "films/$FILM/script.json" "$WORK/script.json"
           cp "films/$FILM/film.js" "$WORK/film.js"
           mkdir -p "$WORK/assets/img"
-          curl -fsSL -o "$WORK/assets/img/huang.jpg" \
-            "https://upload.wikimedia.org/wikipedia/commons/a/a1/Jensen_huang_stanford_2026-04-30_005.jpg"
+          if [ -f "films/$FILM/assets.txt" ]; then
+            while read -r name url; do
+              [ -z "${name:-}" ] && continue
+              curl -fsSL -A "ws-render/1.0" -o "$WORK/assets/img/$name" "$url"
+              echo "img $name $(wc -c < "$WORK/assets/img/$name") B"
+            done < "films/$FILM/assets.txt"
+          fi
           python scripts/temp_voice.py "$WORK/script.json"
-          node -e "const t=require('./$WORK/timeline.json');console.log('duration',t.duration,'s ·',t.beats.length,'beats')"
+          grep -o '"duration":[^,]*' "$WORK/timeline.json"
 
       - name: Check shot table
         run: |
@@ -75,20 +106,22 @@ jobs:
         if: always()
         run: node scripts/render.mjs --dir "$WORK" --sheet 2>&1 | tail -40 || true
 
-      - name: Render 720p
-        run: node scripts/render.mjs --dir "$WORK" --video --h 720 2>&1 | tee render-720.log
-
-      - name: Render 1080p
-        run: node scripts/render.mjs --dir "$WORK" --video --h 1080 2>&1 | tee render-1080.log
+      - name: Render
+        run: |
+          set -euo pipefail
+          for H in ${HEIGHTS//,/ }; do
+            echo "== render $H =="
+            node scripts/render.mjs --dir "$WORK" --video --h "$H" 2>&1 | tee "render-$H.log"
+          done
 
       - name: Mix + mux audio
         run: |
-          set -o pipefail
+          set -euo pipefail
           python scripts/mix.py "$WORK" 2>&1 | tail -20
-          for H in 720 1080; do
+          for H in ${HEIGHTS//,/ }; do
             ffmpeg -v error -y -i "$WORK/out/visual_$H.mp4" -i "$WORK/mix_master.wav" \
-              -c:v copy -c:a aac -b:a 160k -shortest "$WORK/out/nvda-$H.mp4"
-            ls -lh "$WORK/out/nvda-$H.mp4"
+              -c:v copy -c:a aac -b:a 160k -shortest "$WORK/out/mux_$H.mp4"
+            ls -lh "$WORK/out/mux_$H.mp4"
           done
 
       - name: Collect
@@ -97,18 +130,14 @@ jobs:
           mkdir -p dist
           echo "== $WORK/out =="
           ls -lh "$WORK/out" || true
-          for f in "$WORK"/out/nvda-*.mp4; do
+          for f in "$WORK"/out/mux_*.mp4; do
             [ -f "$f" ] || continue
-            b=$(basename "$f")
-            case "$b" in
-              *720*) cp "$f" "dist/$FILM-720p.mp4" ;;
-              *1080*) cp "$f" "dist/$FILM-1080p.mp4" ;;
-              *) cp "$f" "dist/$b" ;;
-            esac
+            H=$(basename "$f" | sed 's/^mux_//; s/\.mp4$//')
+            cp "$f" "dist/$FILM-${H}p.mp4"
           done
           for s in sheet.png sheet.jpg; do
-            [ -f "$WORK/out/$s" ] && cp "$WORK/out/$s" "dist/$s"
-          done || true
+            if [ -f "$WORK/out/$s" ]; then cp "$WORK/out/$s" "dist/$s"; fi
+          done
           cp check.log "dist/check.log" 2>/dev/null || true
           ls -lh dist || true
 
@@ -119,8 +148,8 @@ jobs:
           tag_name: render-${{ github.run_number }}
           name: ${{ env.FILM }} · run ${{ github.run_number }}
           body: |
-            自动渲染产物。run ${{ github.run_number }} · commit ${{ github.sha }}
-            720p 用于预览/微信，1080p 为成片。sheet.jpg 是每镜三个代表帧。
+            自动渲染产物。片子 `${{ env.FILM }}` · run ${{ github.run_number }} · commit ${{ github.sha }}
+            分辨率：${{ env.HEIGHTS }}p（短边）。sheet.png 是每镜三个代表帧，check.log 是镜头表自检。
           files: dist/*
           fail_on_unmatched_files: false
 
@@ -139,7 +168,8 @@ jobs:
           import json, os, pathlib
           d = pathlib.Path('dist')
           files = sorted(p.name for p in d.glob('*')) if d.exists() else []
-          st = {"run": os.environ.get("GITHUB_RUN_NUMBER"), "sha": os.environ.get("GITHUB_SHA"),
+          st = {"film": os.environ.get("FILM"), "run": os.environ.get("GITHUB_RUN_NUMBER"),
+                "sha": os.environ.get("GITHUB_SHA"), "heights": os.environ.get("HEIGHTS"),
                 "result": os.environ.get("JOB_STATUS"), "files": files}
           pathlib.Path('render-status.json').write_text(json.dumps(st, indent=1), encoding='utf-8')
           print(st)
